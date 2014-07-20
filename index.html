@@ -48,7 +48,7 @@ for(var i = 0; i < 4; i++) {
 
   // Audio Variables
   oscillator[i] = audio[i].createOscillator();
-  gainNode[i] = audio[i].createGainNode();
+  gainNode[i] = audio[i].createGain();
   oscillator[i].frequency.value = 0;
   oscillator[i].type = 0; // Sine wave
   oscillator[i].connect(gainNode[i]);
@@ -125,9 +125,153 @@ Leap.loop(function(frame) {
   document.getElementById("controller_two").style.left = String(100 - vol[1]*25) + "%";
 });
 </script>
+
+<script>
+var MSM = {
+  bpm : 144,
+  bpb: 3,
+  notes : [
+    ["F4",1],["E4",1],["F4",1],
+    ["E4",1],["D4",1.5],["C4",0.5],
+    ["E4",1],["D4",2],
+    ["D4",2],["F4",2],
+    ["A4",3],
+    ["D5",2],["C5",1,"s"],
+    ["A4",3],
+    ["A4",3],
+    ["G4",1],["F4",1],["E4",1,"f"],
+    ["D4",1],["E4",1,"f"],["G4",1],
+    ["A4",3],
+    ["D4",3],
+    ["F4",3],
+    ["E4",2],["B3",1],
+    ["E4",3],
+    ["E4",1],["r",1],["r",1],
+    ["F4",1],["E4",1],["F4",1],
+    ["E4",1],["D4",1.5],["C4",1],
+    ["E4",1],["D4",2],
+    ["D4",2],["F4",1],
+    ["A4",3],
+    ["D5",2],["C5",1,"s"],
+    ["A4",3],
+    ["A4",3],
+    ["G4",1],["F4",1],["E4",1,"f"],
+    ["C4",1],["E4",1.5,"f"],["G4",0.5],
+    ["A4",3],
+    ["D4",3],
+    ["F4",3],
+    ["E4",2],["E4",0.5],["F4",0.5],
+    ["D4",3],
+    ["r",3],//Key change
+    ["D5",3],
+    ["G5",2],["F5",1],
+    ["E5",2],["F5",1],
+    ["G5",3],
+    ["B4",3,"f"],
+    ["A4",2],["G4",1],
+    ["A4",3],
+    ["A4",3],
+    ["D5",3],
+    ["G5",2],["F5",1],
+    ["E5",2],["F5",1],
+    ["D5",3],
+    ["E5",3],
+    ["B4",3,"f"],
+    ["A4",2],["A4",0.33],["C5",0.33,"s"],["E5",0.33],
+    ["A5",1],["r",1],["r",1],
+    ["F5",1],["E5",1],["F5",1],
+    ["E5",1],["D5",1.5],["C5",0.5],
+    ["E5",1],["D5",2],
+    ["D5",2],["F5",1]
+  ]
+}
+
+function note2freq(note)
+{
+  var i = noteNames.indexOf(note[0]);
+  var f = noteFreq[i];
+  if(note[2] =="s")
+    f = (f+noteFreq[i+1])/2;
+  if(note[2] =="f")
+    f = (f+noteFreq[i-1])/2;
+  return f;
+}
+
+function startTutor(play)
+{
+  var millisPerBeat = 60*1000/MSM["bpm"];
+  var v=2;
+  var notes = MSM["notes"];
+  var t = 1000;
+  var c = MSM["bpb"];
+  countDown(c,notes,millisPerBeat,v,play);
+}
+
+function countDown(c,notes,millisPerBeat,v,play)
+{
+  if(c==0)
+  {
+    document.getElementById("counter").innerHTML = "";
+    document.getElementById("tutor_one").style.visibility = "visible";
+    placeNext(notes,millisPerBeat,v,play);
+  }
+  else
+  {
+    document.getElementById("counter").innerHTML = c;
+    setTimeout(function(){countDown(c-1,notes,millisPerBeat,v,play);},millisPerBeat);
+  }
+}
+
+function placeNext(notes,millisPerBeat,v,play)
+{
+  var n = notes.shift();
+  if(n)
+  {
+    if(n[0]=="r")
+    {
+      if(play)
+      {
+        //gainNode[0].gain.value = 0;
+        gainNode[2].gain.value = 0;
+      }
+      document.getElementById("tutor_one").style.backgroundColor = "green";
+    }
+    else
+    {
+      f = note2freq(n);
+      if(play)
+      {
+        console.log(f);
+        oscillator[2].frequency.value = f;
+        gainNode[2].gain.value = v;
+      }
+      document.getElementById("tutor_one").style.backgroundColor = "red";
+    }
+    t = millisPerBeat*n[1];
+    placeTutor(f,v);
+    setTimeout(function(){placeNext(notes,millisPerBeat,v,play)},t);
+  }
+  else
+  {
+    if(play)
+    {
+      //gainNode[0].gain.value = 0;
+      gainNode[2].gain.value = 0;
+    }
+    document.getElementById("tutor_one").style.visibility = "hidden";
+  }
+}
+
+function placeTutor(f,v)
+{
+  
+  document.getElementById("tutor_one").style.top = String(100*(1-((f - noteFreq[0])/(noteFreq[noteFreq.length-1] - noteFreq[0])))) + "%";
+  document.getElementById("tutor_one").style.left = String(100 - v*25) + "%";
+}
+</script>
 </head>
 <body onload="initialize();">
-  <div id="title">Leap Theremin!</div>
+  <div id="title">Leap Theremin <i>Tutor</i>!</div>
   <div id="data1">
     <b>Hand 1</b><br>
     Frequency: <span id="frequency_one">0</span><br>
@@ -138,6 +282,14 @@ Leap.loop(function(frame) {
     Frequency: <span id="frequency_two">0</span><br>
     Volume: <span id="volume_two">0</span>
   </div>
+  <div id="tutor_controls">
+    <b>Tutor</b><br>
+    <input type="button" id="start" onclick="startTutor(false);" value="start"/><br/>
+    <input type="button" id="play" onclick="startTutor(true);" value="play"/>
+    <!-- TODO: drop down -->
+  </div>
+  <div id="counter"></div>
+  <div id="tutor_one"></div>
   <div id="controller_one"></div>
   <div id="controller_two"></div>
 </body>
