@@ -133,9 +133,7 @@ function initTutor()
   var tuneSelector = document.getElementById("tunes");
   var tuneVals = Object.keys(TUNES);
   for(var i = 0; i < tuneVals.length; i++)
-  {
     tuneSelector.innerHTML += "<option value=\""+tuneVals[i]+"\">"+TUNES[tuneVals[i]].name+"</option>";
-  }
 }
 
 function note2freq(note)
@@ -155,7 +153,6 @@ function startTutor(play)
   var millisPerBeat = 60*1000/tune["bpm"];
   var v=2;
   var notes = tune["notes"].slice(0);;
-  var t = 1000;
   var c = tune["bpb"];
   countDown(c,notes,millisPerBeat,v,play);
 }
@@ -183,9 +180,7 @@ function placeNext(notes,millisPerBeat,v,play)
     if(n[0]=="r")
     {
       if(play)
-      {
         gainNode[2].gain.value = 0;
-      }
       document.getElementById("tutor_one").style.backgroundColor = "#505050";
     }
     else
@@ -202,12 +197,10 @@ function placeNext(notes,millisPerBeat,v,play)
     placeTutor(f,v);
     setTimeout(function(){placeNext(notes,millisPerBeat,v,play)},t);
   }
-  else
+  else //no more notes!
   {
     if(play)
-    {
       gainNode[2].gain.value = 0;
-    }
     document.getElementById("tutor_one").style.visibility = "hidden";
   }
 }
